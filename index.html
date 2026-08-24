@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">                      <!-- Define la codificación de caracteres como UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Configura el viewport para responsividad en dispositivos móviles -->
+    <title>Sistema de Citas Médicas | Hospital General Rosamorada</title> <!-- Título de la página web -->
+    <link rel="stylesheet" href="css/style.css"> <!-- Enlaza el archivo de estilos CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"> <!-- Carga iconos de Font Awesome versión 6.5.2 -->
+    <script src="js/html2pdf.bundle.min.js"></script> <!-- Carga biblioteca para generar PDFs desde HTML -->
+    <script src="js/xlsx.full.min.js"></script> <!-- Carga biblioteca para manejar archivos Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script> <!-- Carga la biblioteca exceljs para manipulación de datos Excel -->
+    <!-- Cliente API (backend Node.js + MySQL) -->
+    <script src="js/api.js"></script> <!-- Script cliente para comunicarse con el backend del servidor -->
+    <!-- QR Code Generator local -->
+    <script src="js/qrcode.min.js"></script> <!-- Carga generador de códigos QR -->
+</head>
+<body>
+    <div class="container">                      <!-- Contenedor principal con ancho máximo y sombra -->
+        <!-- Header -->
+        <header>                                <!-- Encabezado superior del sitio -->
+            <div class="logo-title">           <!-- Título/logo del sistema -->
+                <i class="fas fa-hospital-user"></i> <!-- Icono de hospital usando Font Awesome -->
+                <h1>Sistema de Citas Médicas</h1> <!-- Título principal H1 -->
+            </div>
+            <p>Hospital General Rosamorada, Nayarit</p> <!-- Subtítulo con ubicación -->
+        </header>
+
+        <!-- Panel de Navegación -->
+        <nav class="tabs">                      <!-- Barra de navegación pestañas -->
+            <button class="tab-btn active" data-tab="register"><i class="fas fa-user-plus"></i> Registrar Paciente</button> <!-- Pestaña para registrar nuevo paciente -->
+            <button class="tab-btn" data-tab="appointment"><i class="fas fa-calendar-plus"></i> Nueva Cita</button> <!-- Pestaña para crear nueva cita -->
+            <button class="tab-btn" data-tab="history"><i class="fas fa-history"></i> Historial</button> <!-- Pestaña para ver historial -->
+            <button class="tab-btn" data-tab="admin"><i class="fas fa-user-shield"></i> Administración</button> <!-- Pestaña de administración -->
+            <button class="tab-btn" data-tab="qr"><i class="fas fa-qrcode"></i> QR Cita</button> <!-- Pestaña para generar QR de cita -->
+        </nav>
+
+        <!-- Contenido Dinámico -->
+        <div class="content">                   <!-- Área principal donde se cargan las diferentes secciones -->
+            <!-- Sección Registrar Paciente -->
+            <div id="register" class="tab-content active"> <!-- Contenedor de la sección de registro de pacientes, visible por defecto -->
+                <h2><i class="fas fa-user-md"></i> Registro de Paciente</h2> <!-- Encabezado con icono -->
+                <form id="patientForm">          <!-- Formulario de registro de paciente -->
+                    <div class="form-group">    <!-- Grupo de formulario para nombre -->
+                        <label for="patName">Nombre Completo:</label> <!-- Etiqueta del campo -->
+                        <input type="text" id="patName" placeholder="Ej: Juan Pérez López" required> <!-- Campo de texto obligatorio para nombre -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para número de expediente -->
+                        <label for="patExpediente">Número de Expediente:</label> <!-- Etiqueta del campo -->
+                        <input type="text" id="patExpediente" placeholder="Se genera automáticamente" readonly> <!-- Campo de solo lectura, generado automáticamente -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para CURP -->
+                        <label for="patCurp">CURP:</label> <!-- Etiqueta del campo -->
+                        <input type="text" id="patCurp" maxlength="18" placeholder="PEPJ900101HNTRRN01" required autocomplete="off"> <!-- Campo de texto con límite de 18 caracteres, obligatorio -->
+                        <div id="curpFeedback" class="curp-feedback"></div> <!-- Elemento para mostrar feedback de validación de CURP -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para fecha de nacimiento -->
+                        <label for="patDob">Fecha de Nacimiento:</label> <!-- Etiqueta del campo -->
+                        <input type="date" id="patDob" required> <!--Selector de fecha, campo obligatorio -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para género -->
+                        <label for="patGender">Sexo:</label> <!-- Etiqueta del campo -->
+                        <select id="patGender" required title="Sexo"> <!-- Lista desplegable obligatoria -->
+                            <option value="">Seleccione</option> <!-- Opción por defecto, nada seleccionado -->
+                            <option value="Masculino">Masculino</option> <!-- Opción masculina -->
+                            <option value="Femenino">Femenino</option> <!-- Opción femenina -->
+                        </select>
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para teléfono -->
+                        <label for="patPhone">Teléfono:</label> <!-- Etiqueta del campo -->
+                        <input type="tel" id="patPhone" placeholder="311 123 4567" required> <!-- Campo de solo números, obligatorio -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para correo electrónico -->
+                        <label for="patEmail">Correo Electrónico:</label> <!-- Etiqueta del campo -->
+                        <input type="email" id="patEmail" placeholder="paciente@email.com"> <!-- Campo de email opcional -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para dirección -->
+                        <label for="patAddress">Domicilio:</label> <!-- Etiqueta del campo -->
+                        <input type="text" id="patAddress" placeholder="Calle, número, colonia" required> <!-- Campo de texto obligatorio -->
+                    </div>
+                    
+                    <!-- ESTADO (con event listener para cargar municipios) -->
+                    <div class="form-group">    <!-- Grupo de formulario para estado -->
+                        <label for="patState">Estado:</label> <!-- Etiqueta del campo -->
+                        <select id="patState" required title="Estado"> <!-- Lista desplegable obligatoria -->
+                            <option value="">Seleccione un estado</option> <!-- Opción por defecto -->
+                        </select>
+                    </div>
+                    
+                    <!-- MUNICIPIO / CIUDAD (cargado dinámicamente según el estado) -->
+                    <div class="form-group">    <!-- Grupo de formulario para municipio -->
+                        <label for="patCity">Municipio / Ciudad:</label> <!-- Etiqueta del campo -->
+                        <select id="patCity" required title="Municipio o Ciudad"> <!-- Lista desplegable obligatoria -->
+                            <option value="">Primero seleccione un estado</option> <!-- Mensaje instructivo -->
+                        </select>
+                    </div>
+                    
+                    <!-- POBLACIÓN / LOCALIDAD (cargado dinámicamente según el municipio) -->
+                    <div class="form-group">    <!-- Grupo de formulario para población/localidad -->
+                        <label for="patPopulation">Población / Localidad:</label> <!-- Etiqueta del campo -->
+                        <select id="patPopulation" required title="Población o Localidad"> <!-- Lista desplegable obligatoria -->
+                            <option value="">Primero seleccione un municipio</option> <!-- Mensaje instructivo -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">    <!-- Grupo de formulario para código postal -->
+                        <label for="patZipCode">Código Postal:</label> <!-- Etiqueta del campo -->
+                        <input type="text" id="patZipCode" maxlength="5" placeholder="63630"> <!-- Campo de 5 caracteres, con ejemplo -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo de formulario para tipo de sangre -->
+                        <label for="patBloodType">Tipo de Sangre:</label> <!-- Etiqueta del campo -->
+                        <select id="patBloodType" title="Tipo de Sangre"> <!-- Lista desplegable -->
+                            <option value="">Seleccione</option> <!-- Opción por defecto -->
+                            <option>O+</option> <!-- Grupo O positivo -->
+                            <option>O-</option> <!-- Grupo O negativo -->
+                            <option>A+</option> <!-- Grupo A positivo -->
+                            <option>A-</option> <!-- Grupo A negativo -->
+                            <option>B+</option> <!-- Grupo B positivo -->
+                            <option>B-</option> <!-- Grupo B negativo -->
+                            <option>AB+</option> <!-- Grupo AB positivo -->
+                            <option>AB-</option> <!-- Grupo AB negativo -->
+                        </select>
+                    </div>
+                         <button type="submit" class="btn-primary"> <!-- Botón de submit principal -->
+                            <i class="fas fa-save"></i> Registrar Paciente <!-- Ícono y texto del botón -->
+                        </button>
+                    </form>
+                    <div id="patientMsg" class="message"></div> <!-- Contenedor para mensajes de estado -->
+                    <p class="info-text">La administración de pacientes es privada. Solo el personal autorizado del hospital puede editar o eliminar pacientes desde la pestaña Administración.</p> <!-- Nota informativa sobre privacidad -->
+                </div>
+            <!-- Fin Sección Registrar Paciente -->
+
+            <!-- Sección Nueva Cita -->
+            <div id="appointment" class="tab-content"> <!-- Contenedor de la sección para programar cita -->
+                <h2><i class="fas fa-calendar-check"></i> Programar Cita Médica</h2> <!-- Encabezado con icono -->
+                <form id="appointmentForm"> <!-- Formulario para programar cita -->
+                    <div class="form-group">    <!-- Grupo para seleccionar paciente -->
+                        <label for="appPatientId">Seleccionar Paciente:</label> <!-- Etiqueta -->
+                        <select id="appPatientId" required title="Seleccionar Paciente"> <!-- Select obligatorio -->
+                            <option value="">-- Elige un paciente registrado --</option> <!-- Opción inicial -->
+                        </select>
+                    </div>
+                    <div class="form-group">    <!-- Grupo para seleccionar médico -->
+                        <label for="appDoctor">Médico:</label> <!-- Etiqueta -->
+                        <select id="appDoctor" required title="Médico"> <!-- Select obligatorio -->
+                            <option value="">-- Elige un médico --</option> <!-- Opción inicial -->
+                        </select>
+                    </div>
+                    <div class="form-group">    <!-- Grupo para fecha de cita -->
+                        <label for="appDate">Fecha de Cita:</label> <!-- Etiqueta -->
+                        <input type="date" id="appDate" required> <!-- Input de fecha, obligatorio -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo para hora de cita -->
+                        <label for="appTime">Hora:</label> <!-- Etiqueta -->
+                        <input type="time" id="appTime" required> <!-- Input de hora, obligatorio -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo para motivo de consulta -->
+                        <label for="appReason">Motivo de consulta:</label> <!-- Etiqueta -->
+                        <textarea id="appReason" rows="2" placeholder="Dolor de cabeza, revisión general, etc."></textarea> <!-- Área de texto multi-línea -->
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-calendar-plus"></i> Programar Cita</button> <!-- Botón para enviar el formulario -->
+                </form>
+                <div id="appMsg" class="message"></div> <!-- Contenedor para mensajes de la cita -->
+            <!-- Fin Sección Nueva Cita -->
+
+            <!-- Sección Administración -->
+            <div id="admin" class="tab-content"> <!-- Contenedor de la sección de administración -->
+                <h2><i class="fas fa-user-shield"></i> Panel administrativo</h2> <!-- Encabezado de admin -->
+
+                <div id="doctorLoginCard" class="card"> <!-- Tarjeta de login de médico -->
+                    <h3>Inicio de sesión del médico</h3> <!-- Título de la tarjeta -->
+                    <p class="info-text">Ingrese su correo y contraseña asignados para consultar la agenda del hospital.</p> <!-- Texto informativo -->
+                    <div class="form-group">    <!-- Grupo para email del médico -->
+                        <label for="doctorLoginEmail">Correo del médico:</label> <!-- Etiqueta -->
+                        <input type="email" id="doctorLoginEmail" placeholder="medico@hospital.com"> <!-- Input de email -->
+                    </div>
+                    <div class="form-group">    <!-- Grupo para contraseña del médico -->
+                        <label for="doctorLoginPassword">Contraseña:</label> <!-- Etiqueta -->
+                        <input type="password" id="doctorLoginPassword" placeholder="Contraseña"> <!-- Input de contraseña -->
+                    </div>
+                    <button id="doctorLoginBtn" class="btn-secondary"><i class="fas fa-user-md"></i> Iniciar sesión médico</button> <!-- Botón de login -->
+                    <div id="doctorLoginMsg" class="message mt-15"></div> <!-- Contenedor de mensajes de login -->
+                </div>
+
+                <div id="adminContent">               <!-- Área principal de contenido admin -->
+                    
+                    <div id="cardAgenda" class="card mt-20"> <!-- Tarjeta de la agenda de citas -->
+                        <h3><i class="fas fa-list-alt"></i> Agenda de Citas</h3> <!-- Título -->
+                        <div class="filter-bar"> <!-- Barra de filtros -->
+                            <label for="filterDate">Filtrar por fecha:</label> <!-- Etiqueta para filtro de fecha -->
+                            <input type="date" id="filterDate"> <!-- Input para selecionar fecha de filtro -->
+                            <button id="filterBtn" class="btn-secondary"><i class="fas fa-search"></i> Buscar</button> <!-- Botón para aplicar filtro -->
+                            <button id="resetAgenda" class="btn-secondary"><i class="fas fa-sync-alt"></i> Mostrar todas</button> <!-- Botón para ver todas las citas -->
+                        </div>
+                        <div class="form-group">    <!-- Grupo de búsqueda en agenda -->
+                            <label for="agendaSearch">Buscar en agenda:</label> <!-- Etiqueta -->
+                            <input type="text" id="agendaSearch" placeholder="ID, paciente, médico, fecha..."> <!-- Input de búsqueda -->
+                        </div>
+                        <div id="agendaList" class="card-list"> <!-- Lista donde se muestran las citas -->
+                            <!-- Aquí se cargan las citas dinámicamente --> <!-- Comentario: Este contenido se carga vía JavaScript -->
+                        </div>
+                    </div>
+
+                    <div id="cardDoctors" class="card"> <!-- Tarjeta de gestión de médicos -->
+                        <h3>Gestión de médicos</h3> <!-- Título de la sección -->
+                        <div class="form-group">    <!-- Grupo de búsqueda de médicos -->
+                            <label for="doctorSearch">Buscar médico:</label> <!-- Etiqueta -->
+                            <input type="text" id="doctorSearch" placeholder="Nombre o área..."> <!-- Input de búsqueda -->
+                        </div>
+                        <div class="form-group flex-wrap-container"> <!-- Contenedor flexible que permite wrap en pantallas pequeñas -->
+                            <!-- Nombre del médico -->
+                            <div class="flex-1">          <!-- División flexível para nombre -->
+                                <label for="newDoctorName">Nombre de médico:</label> <!-- Etiqueta -->
+                                <input type="text" id="newDoctorName" placeholder="Ej: Dr. Pedro Pérez"> <!-- Input de nombre -->
+                            </div>
+                            <!-- Área del médico -->
+                            <div class="flex-1">          <!-- División flexible para área -->
+                                <label for="newDoctorArea">Área:</label> <!-- Etiqueta -->
+                                <input type="text" id="newDoctorArea" placeholder="Ej: Medicina General"> <!-- Input de área -->
+                            </div>
+                            <!-- Correo del médico -->
+                            <div class="flex-1">          <!-- División flexible para correo -->
+                                <label for="newDoctorEmail">Correo del médico:</label> <!-- Etiqueta -->
+                                <input type="email" id="newDoctorEmail" placeholder="medico@hospital.com"> <!-- Input de correo -->
+                            </div>
+                            <!-- Contraseña del médico -->
+                            <div class="flex-1">          <!-- División flexible para contraseña -->
+                                <label for="newDoctorPassword">Contraseña del médico:</label> <!-- Etiqueta -->
+                                <input type="password" id="newDoctorPassword" placeholder="Contraseña segura"> <!-- Input de contraseña -->
+                            </div>
+                            <button id="addDoctorBtn" class="btn-primary btn-height"><i class="fas fa-user-md"></i> Agregar Médico</button> <!-- Botón para agregar nuevo médico -->
+                        </div>
+                        <!-- Campo de turno - IMPORTANTE: Este campo siempre será visible, si no hay espacio horizontal aparecerá abajo -->
+                        <div class="form-group required"> <!-- Grupo de formulario con clase 'required' para mostrar asterisco rojo -->
+                            <label for="newDoctorTurno">Turno *:</label> <!-- Etiqueta con asterisco para indicar campo obligatorio -->
+                            <select id="newDoctorTurno" style="width: 100%;"> <!-- Selector de turno, ancho completo -->
+                                <option value="Lunes a Viernes">Lunes a Viernes</option> <!-- Opción principal de turno -->
+                                <option value="Sabado y Domingo">Sabado y Domingo</option> <!-- Opción de fin de semana -->
+                                <option value="Lunes a Domingo">Lunes a Domingo</option> <!-- Opción de turno completo -->
+                            </select>
+                            <small>Seleccione el turno del médico</small> <!-- Texto de ayuda/instrucción -->
+                        </div>
+                        <div id="doctorList" class="card-list mt-15"></div> <!-- Lista donde se muestran los médicos registrados -->
+                    <!-- Fin Tarjeta de gestión de médicos -->
+
+                    <div id="cardAdmins" class="card mt-20"> <!-- Tarjeta de gestión de administradores -->
+                        <h3>Gestión de administradores</h3> <!-- Título -->
+                        <p class="info-text">Agregue cuentas adicionales para otros administradores.</p> <!-- Texto informativo -->
+                        <div class="form-group">    <!-- Grupo para búsqueda de admin -->
+                            <label for="adminSearch">Buscar administrador:</label> <!-- Etiqueta -->
+                            <input type="text" id="adminSearch" placeholder="Correo..."> <!-- Input de búsqueda -->
+                        </div>
+                        <div class="form-group flex-row"> <!-- Contenedor en fila para campos admin -->
+                            <!-- Correo del administrador -->
+                            <div class="flex-1">          <!-- División flexible -->
+                                <label for="newAdminEmail">Correo admin:</label> <!-- Etiqueta -->
+                                <input type="email" id="newAdminEmail" placeholder="admin2@hospital.com"> <!-- Input de correo -->
+                            </div>
+                            <!-- Contraseña del administrador -->
+                            <div class="flex-1">          <!-- División flexible -->
+                                <label for="newAdminPassword">Contraseña:</label> <!-- Etiqueta -->
+                                <input type="password" id="newAdminPassword" placeholder="Contraseña segura"> <!-- Input de contraseña -->
+                            </div>
+                            <button id="addAdminBtn" class="btn-primary btn-height"><i class="fas fa-user-shield"></i> Agregar Administrador</button> <!-- Botón para agregar admin -->
+                        </div>
+                        <div id="adminList" class="card-list mt-15"></div> <!-- Lista de administradores -->
+                    </div>
+                    <div id="cardPatients" class="card mt-20"> <!-- Tarjeta de gestión de pacientes (privada) -->
+                        <h3>Gestión de pacientes (privada)</h3> <!-- Título -->
+                        <p class="info-text">Solo el personal autorizado puede editar o eliminar pacientes.</p> <!-- Nota de privacidad -->
+                        <div class="form-group">    <!-- Grupo de búsqueda de paciente -->
+                            <label for="patientSearch">Buscar paciente:</label> <!-- Etiqueta -->
+                            <input type="text" id="patientSearch" placeholder="Nombre, CURP, correo o ID..."> <!-- Input de búsqueda -->
+                        </div>
+                        <div id="adminPatientList" class="card-list mt-15"></div> <!-- Lista de pacientes -->
+                    </div>
+                    <div id="cardDoctorAgenda" class="card mt-20"> <!-- Tarjeta de agenda de doctor -->
+                        <h3>Lista de citas ordenada por médico</h3> <!-- Título -->
+                        <div class="form-group">    <!-- Grupo de búsqueda -->
+                            <label for="doctorAgendaSearch">Buscar cita:</label> <!-- Etiqueta -->
+                            <input type="text" id="doctorAgendaSearch" placeholder="Paciente, médico, ID, fecha..."> <!-- Input de búsqueda -->
+                        </div>
+                        <div class="filter-bar"> <!-- Barra de filtros -->
+                            <button id="refreshDoctorListBtn" class="btn-secondary"><i class="fas fa-sync-alt"></i> Actualizar Lista</button> <!-- Botón para refrescar lista -->
+                            <button id="downloadDoctorListExcelBtn" class="btn-primary"><i class="fas fa-file-excel"></i> Exportar a Excel</button> <!-- Botón para exportar a Excel -->
+                        </div>
+                        <div id="doctorAgendaList" class="card-list mt-15"></div> <!-- Lista de citas ordenadas por médico -->
+                    </div>
+                    <div class="flex-between">      <!-- Contenedor para botones alineados -->
+                        <button id="adminLogoutBtn" class="btn-secondary btn-height"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button> <!-- Botón de cerrar sesión -->
+                    </div>
+                </div>
+            <!-- Fin Sección Administración -->
+
+            <!-- Sección Historial -->
+            <div id="history" class="tab-content"> <!-- Contenedor de historial de citas -->
+                <h2><i class="fas fa-folder-open"></i> Historial de Citas por Paciente</h2> <!-- Título -->
+                <div class="form-group">    <!-- Grupo de búsqueda -->
+                    <label for="searchPatient">Buscar paciente por nombre, CURP o correo:</label> <!-- Etiqueta -->
+                    <input type="text" id="searchPatient" placeholder="Nombre, CURP o correo..."> <!-- Input de búsqueda -->
+                    <button id="searchHistoryBtn" class="btn-secondary">Buscar historial</button> <!-- Botón para buscar -->
+                </div>
+                <div id="historyResult"></div> <!-- Área donde se mostrarán los resultados -->
+            <!-- Fin Sección Historial -->
+
+            <!-- Sección QR para validar cita -->
+            <div id="qr" class="tab-content"> <!-- Contenedor de sección QR -->
+                <h2><i class="fas fa-qrcode"></i> Código QR de Cita</h2> <!-- Título -->
+                <div class="form-group">    <!-- Grupo para ID de cita -->
+                    <label for="qrAppointmentId">ID de Cita (aparece en Agenda):</label> <!-- Etiqueta -->
+                    <input type="number" id="qrAppointmentId" placeholder="Ej: 1"> <!-- Input numérico -->
+                    <button id="generateQRBtn" class="btn-primary"><i class="fas fa-qrcode"></i> Generar QR</button> <!-- Botón para generar QR -->
+                </div>
+                <div class="form-group">    <!-- Grupo para seleccionar cita -->
+                    <label for="qrAppointmentSelect">O elegir una cita:</label> <!-- Etiqueta -->
+                    <select id="qrAppointmentSelect"> <!-- Lista desplegable -->
+                        <option value="">-- Seleccione una cita --</option> <!-- Opción por defecto -->
+                    </select>
+                </div>
+                <div id="qrcode" class="qr-container"></div> <!-- Área donde se mostrará el código QR -->
+                <div id="qrMsg" class="message"></div> <!-- Contenedor de mensajes QR -->
+            <!-- Fin Sección QR -->
+        </div>
+    </div>
+
+    <script src="js/script.js"></script> <!-- Carga el script principal de JavaScript -->
+</body>
+</html>

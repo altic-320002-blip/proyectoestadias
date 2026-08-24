@@ -1,0 +1,318 @@
+* {
+    margin: 0;                                <!-- Pone el margen en 0 para todos los elementos -->
+    padding: 0;                               <!-- Pone el relleno en 0 para todos los elementos -->
+    box-sizing: border-box;                   <!-- Usa border-box para incluir padding y border en el ancho total -->
+}
+
+body {
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); <!-- Fondo gradiente desde azul claro hasta azul más oscuro -->
+    padding: 20px;                            <!-- Espacio interno de 20px alrededor del cuerpo -->
+    min-height: 100vh;                        <!-- Altura mínima igual a la altura total de la viewport -->
+}
+
+.container {                                <!-- Contenedor principal que centra el contenido -->
+    max-width: 1200px;                        <!-- Ancho máximo de 1200px -->
+    margin: 0 auto;                           <!-- Margen automático para centrar horizontalmente -->
+    background: white;                        <!-- Fondo blanco -->
+    border-radius: 20px;                      <!-- Bordes redondeados de 20px -->
+    box-shadow: 0 20px 35px rgba(0,0,0,0.1); <!-- Sombra negra con 20px horizontal, 35px vertical y 10% de opacidad -->
+    overflow: visible;                        <!-- Permite que el contenido sobresalga si es necesario -->
+    animation: fadeIn 0.5s ease;             <!-- Animación de entrada que dura 0.5 segundos con easing ease -->
+}
+
+@keyframes fadeIn {                       <!-- Define la animación fadeIn -->
+    from { opacity: 0; transform: translateY(-20px);} <!-- Desde: opacidad 0 y desplazamiento hacia arriba 20px -->
+    to { opacity: 1; transform: translateY(0);}     <!-- Hasta: opacidad 1 y posición normal -->
+}
+
+header {                                    <!-- Elemento header de la página -->
+    background: #0f3b5f;                    <!-- Color de fondo azul oscuro -->
+    color: white;                             <!-- Color de texto blanco -->
+    padding: 25px 30px;                     <!-- Padding de 25px arriba/abajo y 30px izquierda/derecha -->
+    text-align: center;                       <!-- Alinea el contenido al centro -->
+}
+
+.logo-title {                               <!-- Contenedor del título y logo -->
+    display: flex;                          <!-- Usa flexbox para alinear elementos -->
+    align-items: center;                    <!-- Alinea los elementos verticalmente en el centro -->
+    justify-content: center;                <!-- Alinea los elementos horizontalmente en el centro -->
+    gap: 15px;                              <!-- Espacio de 15px entre el icono y el texto -->
+    font-size: 1.5rem;                      <!-- Tamaño de fuente de 1.5rem (aprox 24px) -->
+}
+
+.logo-title i {                             <!-- Icono dentro del logo-title -->
+    font-size: 2.5rem;                      <!-- Tamaño de fuente del icono de 2.5rem (aprox 32px) -->
+}
+
+header p {                                  <!-- El párrafo dentro del header -->
+    margin-top: 10px;                       <!-- Margen superior de 10px -->
+    opacity: 0.9;                           <!-- Opacidad 90% para un efecto más suave -->
+}
+
+.tabs {                                     <!-- Barra de navegación pestañas -->
+    display: flex;                          <!-- Usa flexbox -->
+    flex-wrap: wrap;                        <!-- Permete que las pestañas se envuelvan a la siguiente línea en pantallas pequeñas -->
+    background: #f1f5f9;                    <!-- Color de fondo gris muy claro -->
+    border-bottom: 2px solid #cbd5e1;       <!-- Borde inferior de 2px con color gris -->
+}
+
+.tab-btn {                                  <!-- Botón de cada pestaña -->
+    background: transparent;                <!-- Fondo transparente -->
+    border: none;                           <!-- Sin borde visible -->
+    padding: 15px 25px;                     <!-- Padding de 15px vertical y 25px horizontal -->
+    font-size: 1rem;                        <!-- Tamaño de fuente de 1rem (16px) -->
+    cursor: pointer;                        <!-- Cambura el cursor a mano cuando pasa sobre él -->
+    transition: 0.3s;                       <!-- Transición suave de 0.3 segundos en todos los cambios -->
+    font-weight: 600;                       <!-- Peso de fuente negrita -->
+    color: #1e293b;                         <!-- Color del texto gris oscuro -->
+}
+
+.tab-btn i {                                <!-- Icono dentro del botón pestaña -->
+    margin-right: 8px;                      <!-- Margen a la derecha de 8px para el icono -->
+}
+
+.tab-btn:hover {                            <!-- Cuando el mouse pasa sobre el botón -->
+    background: #e2e8f0;                    <!-- Fondo gris claro -->
+    color: #0f3b5f;                           <!-- Texto cambia a color azul oscuro -->
+}
+
+.tab-btn.active {                           <!-- Botón pestaña activo (seleccionada) -->
+    background: white;                      <!-- Fondo blanco -->
+    color: #0f3b5f;                           <!-- Texto en color azul oscuro -->
+}
+
+.content {                                  <!-- Área de contenido principal -->
+    padding: 30px;                          <!-- Padding interno de 30px -->
+}
+
+.tab-content {                              <!-- Contenido de cada pestaña -->
+    display: none;                          <!-- Oculto por defecto -->
+    animation: fadeIn 0.3s;                 <!-- Animación de fadeIn que dura 0.3 segundos -->
+}
+
+.tab-content.active {                       <!-- Cuando la pestaña está activa -->
+    display: block;                         <!-- Muestra el contenido -->
+}
+
+.hidden {                                   <!-- Clase para ocultar elementos -->
+    display: none !important;               <!-- Fuerza el ocultamiento -->
+}
+
+h2 {                                        <!-- Título H2 -->
+    color: #0f3b5f;                         <!-- Color de texto azul oscuro -->
+    margin-bottom: 25px;                    <!-- Margen inferior de 25px -->
+    border-left: 5px solid #0f3b5f;         <!-- Borde izquierdo sólido de 5px en color azul -->
+    padding-left: 15px;                     <!-- Espacio a la izquierda de 15px -->
+}
+
+.form-group {                               <!-- Grupo de formulario (etiqueta + input) -->
+    margin-bottom: 20px;                    <!-- Margen inferior de 20px para separar grupos -->
+}
+
+label {                                     <!-- Etiqueta de formulario -->
+    display: block;                         <!-- Convertir en elemento de bloque -->
+    margin-bottom: 8px;                     <!-- Margen inferior de 8px -->
+    font-weight: 600;                       <!-- Peso de fuente negrita -->
+    color: #334155;                         <!-- Color de texto gris medio -->
+}
+
+input, select, textarea {                   <!-- Inputs, select y textareas -->
+    width: 100%;                            <!-- Ancho al 100% de su contenedor -->
+    padding: 12px;                          <!-- Relleno interno de 12px -->
+    border: 1px solid #cbd5e1;            <!-- Borde de 1px con color gris -->
+    border-radius: 8px;                     <!-- Bordes redondeados de 8px -->
+    font-size: 1rem;                        <!-- Tamaño de fuente de 1rem (16px) -->
+    transition: 0.2s;                       <!-- Transición suave de 0.2 segundos -->
+}
+
+input:focus, select:focus, textarea:focus { <!-- Cuando el input tiene foco (está seleccionado) -->
+    outline: none;                          <!-- Quita el contorno por defecto -->
+    border-color: #0f3b5f;                <!-- Cambia el borde al color azul -->
+    box-shadow: 0 0 0 3px rgba(15, 59, 95, 0.1); <!-- Agombra sombra azul suave alrededor del input -->
+}
+
+.btn-primary, .btn-secondary {              <!-- Botones primarios y secundarios -->
+    padding: 12px 25px;                     <!-- Padding de 12px vertical y 25px horizontal -->
+    border: none;                           <!-- Sin borde -->
+    border-radius: 8px;                     <!-- Bordes redondeados de 8px -->
+    font-size: 1rem;                        <!-- Tamaño de fuente de 1rem -->
+    cursor: pointer;                        <!-- Cursor de mano -->
+    transition: 0.3s;                       <!-- Transición suave de 0.3 segundos -->
+    font-weight: 600;                       <!-- Peso de fuente negrita -->
+}
+
+.btn-primary {                              <!-- Botón principal (azul) -->
+    background: #0f3b5f;                    <!-- Fondo color azul oscuro -->
+    color: white;                             <!-- Texto en blanco -->
+}
+
+.btn-primary:hover {                        <!-- Cuando el mouse pasa sobre el botón principal -->
+    background: #1e5a7a;                    <!-- Fondo un tono más claro de azul -->
+    transform: translateY(-2px);            <!-- Eleva ligeramente el botón 2px hacia arriba -->
+}
+
+.btn-secondary {                            <!-- Botón secundario (gris) -->
+    background: #e2e8f0;                    <!-- Fondo gris muy claro -->
+    color: #1e293b;                           <!-- Texto color gris oscuro -->
+}
+
+.btn-secondary:hover {                      <!-- Cuando el mouse pasa sobre botón secundario -->
+    background: #cbd5e1;                    <!-- Fondo gris claro -->
+}
+
+.filter-bar {                               <!-- Barra de filtros (para agenda, búsqueda, etc.) -->
+    display: flex;                          <!-- Usa flexbox -->
+    gap: 10px;                              <!-- Espacio de 10px entre los elementos -->
+    align-items: flex-end;                  <!-- Alinea los elementos al fondo verticalmente -->
+    margin-bottom: 20px;                    <!-- Margen inferior de 20px -->
+    flex-wrap: wrap;                        <!-- Permite que los elementos se envuelvan en pantallas pequeñas -->
+}
+
+.card-list {                                <!-- Lista de cartas (grid de elementos) -->
+    display: grid;                          <!-- Usa layout de grid -->
+    gap: 15px;                              <!-- Espacio de 15px entre los ítems -->
+    margin-top: 15px;                       <!-- Margen superior de 15px -->
+}
+
+.card {                                     <!-- Tarjeta individual (contenedor de información) -->
+    background: #f8fafc;                    <!-- Fondo gris muy claro -->
+    border-left: 5px solid #0f3b5f;         <!-- Borde izquierdo de 5px en color azul -->
+    padding: 15px 20px;                   <!-- Relleno de 15px vertical y 20px horizontal -->
+    border-radius: 12px;                    <!-- Bordes redondeados de 12px -->
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);<!-- Sombra muy suave -->
+    display: flex;                          <!-- Usa flexbox -->
+    justify-content: space-between;         <!-- Distribuye el espacio entre los elementos -->
+    align-items: center;                    <!-- Alinea los elementos verticalmente en el centro -->
+    flex-wrap: wrap;                        <!-- Permite que el contenido se envuelva en pantallas pequeñas -->
+}
+
+.card-info p {                              <!-- párrafo dentro de la información de la tarjeta -->
+    margin: 5px 0;                          <!-- Margen de 5px arriba y abajo, 0 izquierda/derecha -->
+}
+
+.card-actions button {                      <!-- Botones dentro de las acciones de la tarjeta -->
+    background: #dc2626;                    <!-- Fondo color rojo -->
+    color: white;                             <!-- Texto en blanco -->
+    border: none;                           <!-- Sin borde -->
+    padding: 8px 15px;                      <!-- Padding de 8px vertical y 15px horizontal -->
+    border-radius: 6px;                     <!-- Bordes redondeados de 6px -->
+    cursor: pointer;                        <!-- Cursor de mano -->
+    margin-left: 10px;                      <!-- Margen izquierdo de 10px para separar botones -->
+}
+
+.card-actions .reschedule-btn {             <!-- Botón de reprogramar (diferente color) -->
+    background: #eab308;                    <!-- Fondo color amarillo/ámbar -->
+}
+
+.message {                                  <!-- Contenedor de mensajes (éxito, error, info) -->
+    margin-top: 15px;                       <!-- Margen superior de 15px -->
+    padding: 10px;                          <!-- Relleno de 10px -->
+    border-radius: 8px;                     <!-- Bordes redondeados de 8px -->
+    background: #e0f2fe;                    <!-- Fondo color azul muy claro -->
+    color: #075985;                           <!-- Color de texto azul oscuro -->
+}
+
+.qr-container {                             <!-- Contenedor para el código QR -->
+    margin: 20px 0;                         <!-- Margen de 20px arriba y abajo -->
+    display: flex;                          <!-- Usa flexbox -->
+    justify-content: center;                <!-- Centra el contenido horizontalmente -->
+}
+
+.info-text {                                <!-- Texto informativo pequeño -->
+    text-align: center;                     <!-- Alinea el texto al centro -->
+    color: #475569;                           <!-- Color gris -->
+    font-size: 0.9rem;                      <!-- Tamaño de fuente más pequeño (aprox 12px) }
+}
+
+.info-text--top {                           <!-- Texto informativo con margen superior -->
+    margin-top: 10px;                       <!-- Margen superior de 10px -->
+}
+
+@media (max-width: 768px) {               <!-- Consultas de medios para pantallas máximo de 768px (tablets y phones) -->
+    .tabs {                                 <!-- Barra de pestañas -->
+        flex-direction: column;               <!-- Cambia la dirección de fila a columna -->
+    }
+    .tab-btn {                              <!-- Botones pestaña -->
+        text-align: left;                   <!-- Alinea el texto a la izquierda -->
+    }
+    .card {                                 <!-- Tarjetas -->
+        flex-direction: column;               <!-- Cambia la dirección a columna -->
+        align-items: flex-start;            <!-- Alinea los elementos al inicio (izquierda) -->
+    }
+    .card-actions {                         <!-- Acciones de la tarjeta -->
+        margin-top: 10px;                   <!-- Margen superior de 10px -->
+    }
+}
+
+/* Utility classes to replace inline styles */ /* Clases utilidad para reemplazar estilos en línea */
+.mt-15 { margin-top: 15px; }               <!-- Margen superior de 15px -->
+.mt-20 { margin-top: 20px; }               <!-- Margen superior de 20px -->
+.flex-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; } <!-- Contenedor flexible en fila con espaciado y wrap -->
+.flex-1 { flex: 0 0 150px; width: 150px; } <!-- Elemento flex que tiene ancho fijo de 150px -->
+.flex-wrap-container { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; } <!-- Contenedor que permite wrap -->
+.flex-wrap-container > * { flex: 1 1 auto; min-width: 120px; } <!-- Hijos del contenedor que pueden crecer/encoger con ancho mínimo -->
+.btn-height { height:42px; }              <!-- Altura fija de 42px para botones -->
+.flex-between { display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; margin-top:20px; } <!-- Flexbox que distribuye espacio entre elementos -->
+
+/* Dynamic content utilities used by JS templates */ /* Utilidades de contenido dinámico usados por las plantillas JS */
+.btn-danger { background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; } <!-- Botón de danger/eliminar (rojo) -->
+.btn-warning { background: #eab308; color: #1e293b; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; } <!-- Botón de warning ( amarillo) -->
+.inline-message { padding: 10px; border-radius: 8px; } <!-- Mensaje inline con padding y bordes rounded -->
+.inline-message.error { background: #fee2e2; color: #991b1b; } <!-- Mensaje de error con fondo rojo claro -->
+.inline-message.success { background: #dcfce7; color: #166534; } <!-- Mensaje de éxito con fondo verde claro -->
+.mb-10 { margin-bottom: 10px; }           <!-- Margen inferior de 10px -->
+.mb-30 { margin-bottom: 30px; }           <!-- Margen inferior de 30px -->
+.section-title { color: #0f3b5f; border-bottom: 2px solid #0f3b5f; padding-bottom: 5px; } <!-- Título de sección con subrayado -->
+.box-alert { padding:20px; background:#fee2e2; border-radius:10px; } <!-- Cuadro de alerta con fondo rojo claro -->
+.box-alert-strong { padding:20px; background:#fee2e2; border-radius:10px; color:#991b1b; font-weight:bold; } <!-- Cuadro de alerta fuerte (negrita) -->
+.divider-line { border-bottom: 1px solid #e5e7eb; padding: 10px 0; } <!-- Línea divisoria horizontal -->
+.inline-note { background:#f8fafc; color:#0f172a; padding:10px; border-radius:8px; } <!-- Nota en línea con fondo gris claro -->
+
+/* Estado visual para tarjeta seleccionada en la Agenda */ /* Estilo visual cuando una tarjeta de agenda está seleccionada */
+.card.selected {                            <!-- Tarjeta con clase 'selected' -->
+    border-left-color: #2563eb;             <!-- Borde izquierdo en azul brillante -->
+    background: linear-gradient(90deg, #f0f7ff 0%, #ffffff 100%); <!-- Fondo con gradiente horizontal -->
+    box-shadow: 0 6px 18px rgba(37,99,235,0.12);<!-- Sombra más pronunciada -->
+    transform: translateY(-2px);            <!-- Eleva la tarjeta 2px hacia arriba -->
+}
+
+/* Indicador visual de validación de CURP */ /* Estilos para el feedback de validación de CURP */
+.curp-feedback {                            <!-- Contenedor de feedback de CURP -->
+    min-height: 18px;                       <!-- Altura mínima de 18px -->
+    margin-top: 6px;                        <!-- Margen superior de 6px -->
+    font-size: 12px;                        <!-- Tamaño de fuente de 12px -->
+    font-weight: 600;                       <!-- Peso de fuente negrita -->
+    display: flex;                          <!-- Usa flexbox -->
+    align-items: center;                    <!-- Alinea elementos verticalmente en centro -->
+    gap: 6px;                               <!-- Espacio de 6px entre icono y texto -->
+}
+.curp-feedback.valid   { color: #166534; }  <!-- Cuando CURP es válida, color verde -->
+.curp-feedback.invalid { color: #991b1b; } <!-- Cuando CURP es inválida, color rojo -->
+.curp-feedback.duplicate { color: #b45309; } <!-- Cuando CURP es duplicada, color naranja -->
+
+.curp-feedback .curp-icon {                 <!-- Icono dentro del feedback de CURP -->
+    width: 16px;                            <!-- Ancho de 16px -->
+    height: 16px;                           <!-- Alto de 16px -->
+    border-radius: 50%;                     <!-- Bordes redondeados para hacer un círculo -->
+    display: inline-flex;                   <!-- Display inline flex -->
+    align-items: center;                    <!-- Alinear verticalmente -->
+    justify-content: center;                <!-- Alinear horizontalmente -->
+    font-size: 10px;                        <!-- Tamaño de fuente de 10px -->
+    color: #fff;                            <!-- Color blanco -->
+    flex-shrink: 0;                         <!-- Evita que el icono se encogga -->
+}
+.curp-feedback.valid .curp-icon     { background: #16a34a; } <!-- Fondo verde cuando CURP es válida -->
+.curp-feedback.invalid .curp-icon   { background: #dc2626; } <!-- Fondo rojo cuando CURP es inválida -->
+.curp-feedback.duplicate .curp-icon { background: #d97706; } <!-- Fondo ámbar cuando es duplicada -->
+
+.curp-feedback.valid .curp-icon::before   { content: "\2713"; } <!-- Agrega el símbolo de check (✓) cuando es válida -->
+.curp-feedback.invalid .curp-icon::before { content: "\2717"; } <!-- Agrega el símbolo de cross (✗) cuando es inválida -->
+.curp-feedback.duplicate .curp-icon::before { content: "!"; } <!-- Agrega el signo de exclamation (!) cuando es duplicada -->
+
+/* Required field indicator */ /* Indicador de campo requerido */
+.form-group.required label {                <!-- Cuando el form-group tiene clase 'required' -->
+    color: #dc2626;                         <!-- Color del texto en rojo -->
+    font-weight: 600;                       <!-- Peso de fuente negrita -->
+}
+
+#newDoctorTurno { width: 100%; max-width: 320px; } <!-- Ancho completo para el select de turno, máximo 320px -->
