@@ -778,7 +778,7 @@ function requireAdminAuth() {
 
 function setAdminControlsState(enabled) {
     const buttonIds = ['#addDoctorBtn', '#addAdminBtn', '#refreshDoctorListBtn', '#downloadDoctorListExcelBtn'];
-    const inputIds = ['#newDoctorName', '#newDoctorArea', '#newDoctorEmail', '#newDoctorPassword', '#newAdminEmail', '#newAdminPassword'];
+    const inputIds = ['#newDoctorName', '#newDoctorArea', '#newDoctorEmail', '#newAdminEmail', '#newAdminPassword'];
     for (const selector of buttonIds) {
         const btn = document.querySelector(selector);
         if (btn) btn.disabled = !enabled;
@@ -1550,19 +1550,15 @@ async function deletePatient(id) {
     showMessage(document.getElementById('patientMsg'), apiOk ? 'Paciente eliminado correctamente del servidor y localmente.' : 'Paciente eliminado localmente (servidor no disponible).');
 }
 
-async function addDoctor(name, area, email, password) {
+async function addDoctor(name, area, email) {
     if (!requireAdminAuth()) return;
-    if (!name || !area || !email || !password) {
-        alert('Ingrese nombre, área, correo y contraseña del médico.');
+    if (!name || !area || !email) {
+        alert('Ingrese nombre, área y correo del médico.');
         return;
     }
     const emailNormalized = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalized)) {
         alert('Ingrese un correo válido para el médico.');
-        return;
-    }
-    if (password.length < 6) {
-        alert('La contraseña del médico debe tener al menos 6 caracteres.');
         return;
     }
     if (doctors.some(doc => doc.email && doc.email.toLowerCase() === emailNormalized)) {
@@ -1572,7 +1568,7 @@ async function addDoctor(name, area, email, password) {
     const newDias = document.getElementById('newDoctorDias')?.value || 'L-V';
     const newEntrada = document.getElementById('newDoctorEntrada')?.value || '08:00';
     const newSalida = document.getElementById('newDoctorSalida')?.value || '18:00';
-    const newDoctor = { id: nextDoctorId, name, area, email: emailNormalized, password, phone: '', dias_trabaja: newDias, hora_entrada: newEntrada, hora_salida: newSalida };
+    const newDoctor = { id: nextDoctorId, name, area, email: emailNormalized, password: 'Doctor123', phone: '', dias_trabaja: newDias, hora_entrada: newEntrada, hora_salida: newSalida };
     try {
         const created = await apiCreateMedico(mapMedicoToApi(newDoctor));
         if (created && created.id) newDoctor.id = created.id;
@@ -2546,12 +2542,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('newDoctorName').value.trim();
         const area = document.getElementById('newDoctorArea').value.trim();
         const email = document.getElementById('newDoctorEmail').value.trim();
-        const password = document.getElementById('newDoctorPassword').value;
-        addDoctor(name, area, email, password);
+        addDoctor(name, area, email);
         document.getElementById('newDoctorName').value = '';
         document.getElementById('newDoctorArea').value = '';
         document.getElementById('newDoctorEmail').value = '';
-        document.getElementById('newDoctorPassword').value = '';
     });
     document.getElementById('refreshDoctorListBtn')?.addEventListener('click', () => {
         renderDoctorAgenda();
