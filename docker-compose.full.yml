@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: hospital_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: hospital_citas
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./hospital_citas.sql:/docker-entrypoint-initdb.d/hospital_citas.sql
+
+  backend:
+    build: .
+    container_name: hospital_backend
+    environment:
+      PORT: 3001
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: hospital_citas
+      FRONTEND_ORIGIN: "*"
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: hospital_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - .:/app:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:

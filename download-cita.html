@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargando Cita Médica...</title>
+    <script src="js/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #0f3b5f;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0f3b5f;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: #16a34a;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        /* PDF template utilities */
+        .pdf-header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #0f3b5f; padding-bottom: 15px; }
+        .pdf-title { color: #0f3b5f; margin: 0; }
+        .pdf-subtitle { color: #666; margin: 5px 0; }
+        .pdf-section-title { color: #0f3b5f; margin-top: 20px; }
+        .pdf-table { width: 100%; border-collapse: collapse; }
+        .pdf-td { padding: 8px; border: 1px solid #ddd; }
+        .pdf-status-strong { color: #16a34a; }
+        .pdf-footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Hospital General Rosamorada</h1>
+        <div class="spinner"></div>
+        <p class="message">Procesando tu cita médica...</p>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Obtener parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const appointmentId = urlParams.get('id');
+        const statusDiv = document.getElementById('status');
+
+        // Datos embebidos desde el QR
+        const embeddedPatient = {
+            name: urlParams.get('n') || '',
+            curp: urlParams.get('c') || '',
+            phone: urlParams.get('p') || '',
+            email: urlParams.get('e') || '',
+            bloodType: urlParams.get('b') || ''
+        };
+
+        const embeddedAppointment = {
+            id: appointmentId || '',
+            doctor: urlParams.get('doc') || '',
+            date: urlParams.get('d') || '',
+            time: urlParams.get('t') || '',
+            reason: urlParams.get('r') || 'Consulta General',
+            status: urlParams.get('s') || 'Agendada'
+        };
+
+        const hasEmbeddedData = embeddedPatient.name || embeddedAppointment.date || embeddedAppointment.time;
+
+        // Cargar datos del localStorage
+        const storedPatients = JSON.parse(localStorage.getItem('hospital_patients')) || [];
+        const storedAppointments = JSON.parse(localStorage.getItem('hospital_appointments')) || [];
+
+        if (!appointmentId) {
+            statusDiv.innerHTML = '<p class="error">❌ Error: No se especificó ID de cita</p>';
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
+        } else {
+            const storedApp = storedAppointments.find(a => a.id == appointmentId);
+            const storedPatient = storedApp ? storedPatients.find(p => p.id === storedApp.patientId) : null;
+
+            const app = storedApp || (hasEmbeddedData ? embeddedAppointment : null);
+            const patient = storedPatient || (hasEmbeddedData ? embeddedPatient : null);
+
+            if (!app || !patient) {
+                statusDiv.innerHTML = '<p class="error">❌ No se encontró información de la cita</p>';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 3000);
+            } else {
+                const pdfContent = document.createElement('div');
+                pdfContent.style.padding = '20px';
+                pdfContent.style.fontFamily = 'Arial, sans-serif';
+                pdfContent.innerHTML = `
+                    <div class="pdf-header">
+                        <h1 class="pdf-title">🏥 HOSPITAL GENERAL ROSAMORADA</h1>
+                        <p class="pdf-subtitle">COMPROBANTE DE CITA MÉDICA</p>
+                    </div>
+
+                    <h3 class="pdf-section-title">📋 DATOS DEL PACIENTE</h3>
+                    <table class="pdf-table">
+                        <tr>
+                            <td class="pdf-td"><strong>Nombre:</strong></td>
+                            <td class="pdf-td">${patient.name || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>CURP:</strong></td>
+                            <td class="pdf-td">${patient.curp || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Teléfono:</strong></td>
+                            <td class="pdf-td">${patient.phone || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Email:</strong></td>
+                            <td class="pdf-td">${patient.email || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Tipo de Sangre:</strong></td>
+                            <td class="pdf-td">${patient.bloodType || 'N/A'}</td>
+                        </tr>
+                    </table>
+
+                    <h3 class="pdf-section-title">📅 DATOS DE LA CITA</h3>
+                    <table class="pdf-table">
+                        <tr>
+                            <td class="pdf-td"><strong>ID Cita:</strong></td>
+                            <td class="pdf-td">${app.id || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Médico:</strong></td>
+                            <td class="pdf-td">${app.doctor || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Fecha:</strong></td>
+                            <td class="pdf-td">${app.date || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Hora:</strong></td>
+                            <td class="pdf-td">${app.time || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Motivo:</strong></td>
+                            <td class="pdf-td">${app.reason || 'Consulta General'}</td>
+                        </tr>
+                        <tr>
+                            <td class="pdf-td"><strong>Estado:</strong></td>
+                            <td class="pdf-td"><strong class="pdf-status-strong">${app.status || 'Agendada'}</strong></td>
+                        </tr>
+                    </table>
+
+                    <p class="pdf-footer">
+                        📌 Comprobante de cita médica<br/>
+                        <strong>Generado: ${new Date().toLocaleDateString('es-MX')} - Hospital General Rosamorada</strong>
+                    </p>
+                `;
+
+                const fileNameSafe = (patient.name || 'cita').replace(/[^a-zA-Z0-9_-]/g, '_');
+                const options = {
+                    margin: 10,
+                    filename: `Cita_${app.id || 'N/A'}_${fileNameSafe}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+                };
+
+                html2pdf().set(options).from(pdfContent).save().then(() => {
+                    statusDiv.innerHTML = '<p class="success">✅ PDF descargado correctamente</p>';
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                }).catch(() => {
+                    statusDiv.innerHTML = '<p class="error">❌ Error al descargar PDF</p>';
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 3000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

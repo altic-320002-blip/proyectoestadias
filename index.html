@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Citas Médicas | Hospital General Rosamorada</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="js/html2pdf.bundle.min.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <!-- Configuración API -->
+    <script src="js/config.js"></script>
+    <!-- Cliente API (backend Node.js + MySQL) -->
+    <script src="js/api.js"></script>
+    <!-- QR Code Generator local -->
+    <script src="js/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo-title">
+                <i class="fas fa-hospital-user"></i>
+                <h1>Sistema de Citas Médicas</h1>
+            </div>
+            <p>Hospital General Rosamorada, Nayarit</p>
+        </header>
+
+        <!-- Panel de Navegación -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="register"><i class="fas fa-user-plus"></i> Registrar Paciente</button>
+            <button class="tab-btn" data-tab="appointment"><i class="fas fa-calendar-plus"></i> Nueva Cita</button>
+            <button class="tab-btn" data-tab="history"><i class="fas fa-history"></i> Historial</button>
+            <button class="tab-btn" data-tab="admin"><i class="fas fa-user-shield"></i> Administración</button>
+            <button class="tab-btn" data-tab="qr"><i class="fas fa-qrcode"></i> QR Cita</button>
+        </nav>
+
+        <!-- Contenido Dinámico -->
+        <div class="content">
+            <!-- Sección Registrar Paciente -->
+            <div id="register" class="tab-content active">
+                <h2><i class="fas fa-user-md"></i> Registro de Paciente</h2>
+                <form id="patientForm">
+    <div class="form-group">
+        <label for="patName">Nombre Completo:</label>
+        <input type="text" id="patName" placeholder="" required>
+    </div>
+    <div class="form-group">
+        <label for="patCurp">CURP:</label>
+        <input type="text" id="patCurp" maxlength="18" placeholder="" required autocomplete="off">
+        <div id="curpFeedback" class="curp-feedback"></div>
+    </div>
+    <div class="form-group">
+        <label for="patDob">Fecha de Nacimiento:</label>
+        <input type="date" id="patDob" required>
+    </div>
+    <div class="form-group">
+        <label for="patGender">Sexo:</label>
+        <select id="patGender" required title="Sexo">
+            <option value="">Seleccione</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="patPhone">Teléfono:</label>
+        <input type="tel" id="patPhone" placeholder="" required>
+    </div>
+    <div class="form-group">
+        <label for="patEmail">Correo Electrónico:</label>
+        <input type="email" id="patEmail" placeholder="" required>
+    </div>
+    <div class="form-group">
+        <label for="patAddress">Domicilio:</label>
+        <input type="text" id="patAddress" placeholder="Calle, número, colonia" required>
+    </div>
+    
+    <!-- ESTADO (con event listener para cargar municipios) -->
+    <div class="form-group">
+        <label for="patState">Estado:</label>
+        <select id="patState" required title="Estado">
+            <option value="">Seleccione un estado</option>
+        </select>
+    </div>
+    
+    <!-- MUNICIPIO / CIUDAD (cargado dinámicamente según el estado) -->
+    <div class="form-group">
+        <label for="patCity">Municipio / Ciudad:</label>
+        <select id="patCity" required title="Municipio o Ciudad">
+            <option value="">Primero seleccione un estado</option>
+        </select>
+    </div>
+    
+    <!-- POBLACIÓN / LOCALIDAD (cargado dinámicamente según el municipio) -->
+    <div class="form-group">
+        <label for="patPopulation">Población / Localidad:</label>
+        <select id="patPopulation" required title="Población o Localidad">
+            <option value="">Primero seleccione un municipio</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="patZipCode">Código Postal:</label>
+        <input type="text" id="patZipCode" maxlength="5" placeholder="">
+    </div>
+    <div class="form-group">
+        <label for="patBloodType">Tipo de Sangre:</label>
+        <select id="patBloodType" title="Tipo de Sangre">
+            <option value="">Seleccione</option>
+            <option>O+</option>
+            <option>O-</option>
+            <option>A+</option>
+            <option>A-</option>
+            <option>B+</option>
+            <option>B-</option>
+            <option>AB+</option>
+            <option>AB-</option>
+        </select>
+    </div>
+                 <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Registrar Paciente
+                    </button>
+                </form>
+                <div id="patientMsg" class="message"></div>
+                <p class="info-text">La administración de pacientes es privada. Solo el personal autorizado del hospital puede editar o eliminar pacientes desde la pestaña Administración.</p>
+            </div>
+
+            <!-- Sección Nueva Cita -->
+            <div id="appointment" class="tab-content">
+                <h2><i class="fas fa-calendar-check"></i> Programar Cita Médica</h2>
+                <form id="appointmentForm">
+                    <div class="form-group">
+                        <label for="appPatientId">Seleccionar Paciente:</label>
+                        <select id="appPatientId" required title="Seleccionar Paciente">
+                            <option value="">-- Elige un paciente registrado --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appDoctor">Médico:</label>
+                        <select id="appDoctor" required title="Médico">
+                            <option value="">-- Elige un médico --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appDate">Fecha de Cita:</label>
+                        <input type="date" id="appDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appTime">Hora:</label>
+                        <input type="time" id="appTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appReason">Motivo de consulta:</label>
+                        <textarea id="appReason" rows="2" placeholder="Dolor de cabeza, revisión general, etc."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-calendar-plus"></i> Programar Cita</button>
+                </form>
+                <div id="appMsg" class="message"></div>
+            </div>
+
+            <!-- Sección Administración -->
+            <div id="admin" class="tab-content">
+                <h2><i class="fas fa-user-shield"></i> Panel administrativo</h2>
+
+                <div id="doctorLoginCard" class="card">
+                    <h3>Inicio de sesión del médico</h3>
+                    <p class="info-text">Ingrese su correo y contraseña asignados para consultar la agenda del hospital.</p>
+                    <div class="form-group">
+                        <label for="doctorLoginEmail">Correo del médico:</label>
+                        <input type="email" id="doctorLoginEmail" placeholder="Correo">
+                    </div>
+                    <div class="form-group">
+                        <label for="doctorLoginPassword">Contraseña:</label>
+                        <input type="password" id="doctorLoginPassword" placeholder="Contraseña">
+                    </div>
+                    <button id="doctorLoginBtn" class="btn-secondary"><i class="fas fa-user-md"></i> Iniciar sesión médico</button>
+                    <div id="doctorLoginMsg" class="message mt-15"></div>
+                </div>
+
+                <div id="adminContent">
+
+                    <div id="cardAgenda" class="card mt-20">
+                        <h3><i class="fas fa-list-alt"></i> Agenda de Citas</h3>
+                        <div class="filter-bar">
+                            <label for="filterDate">Filtrar por fecha:</label>
+                            <input type="date" id="filterDate">
+                            <button id="filterBtn" class="btn-secondary"><i class="fas fa-search"></i> Buscar</button>
+                            <button id="resetAgenda" class="btn-secondary"><i class="fas fa-sync-alt"></i> Mostrar todas</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="agendaSearch">Buscar en agenda:</label>
+                            <input type="text" id="agendaSearch" placeholder="ID, paciente, médico, fecha...">
+                        </div>
+                        <div id="agendaList" class="card-list">
+                            <!-- Aquí se cargan las citas dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div id="cardDoctors" class="card">
+                        <h3>Gestión de médicos</h3>
+                        <div class="form-group">
+                            <label for="doctorSearch">Buscar médico:</label>
+                            <input type="text" id="doctorSearch" placeholder="Nombre o área...">
+                        </div>
+                        <div class="form-group flex-row">
+                            <div class="flex-1">
+                                <label for="newDoctorName">Nombre de médico:</label>
+                                <input type="text" id="newDoctorName" placeholder="">
+                            </div>
+                            <div class="flex-1">
+                                <label for="newDoctorArea">Área:</label>
+                                <input type="text" id="newDoctorArea" placeholder="">
+                            </div>
+                            <div class="flex-1">
+                                <label for="newDoctorEmail">Correo del médico:</label>
+                                <input type="email" id="newDoctorEmail" placeholder="">
+                            </div>
+                            <div class="flex-1">
+                                <label for="newDoctorPassword">Contraseña del médico:</label>
+                                <input type="password" id="newDoctorPassword" placeholder="">
+                            </div>
+                            <div class="flex-1">
+                                <label for="newDoctorDias">Días:</label>
+                                <select id="newDoctorDias">
+                                    <option value="L-V">Lunes - Viernes</option>
+                                    <option value="S-D">Sábado - Domingo</option>
+                                </select>
+                            </div>
+                            <div class="flex-1">
+                                <label for="newDoctorEntrada">Entrada:</label>
+                                <input type="time" id="newDoctorEntrada" value="08:00">
+                            </div>
+                            <div class="flex-1">
+                                <label for="newDoctorSalida">Salida:</label>
+                                <input type="time" id="newDoctorSalida" value="18:00">
+                            </div>
+                        </div>
+                        <div class="form-group mt-30">
+                            <button id="addDoctorBtn" class="btn-primary btn-height w-100"><i class="fas fa-user-md"></i> Agregar Médico</button>
+                        </div>
+                        <div id="doctorList" class="card-list mt-15"></div>
+                    </div>
+                    <div id="cardAdmins" class="card mt-20">
+                        <h3>Gestión de administradores</h3>
+                        <p class="info-text">Agregue cuentas adicionales para otros administradores.</p>
+                        <div class="form-group">
+                            <label for="adminSearch">Buscar administrador:</label>
+                            <input type="text" id="adminSearch" placeholder="">
+                        </div>
+                        <div class="form-group flex-row">
+                            <div class="flex-1">
+                                <label for="newAdminEmail">Correo admin:</label>
+                                <input type="email" id="newAdminEmail" placeholder="">
+                            </div>
+                            <div class="flex-1">
+                                <label for="newAdminPassword">Contraseña:</label>
+                                <input type="password" id="newAdminPassword" placeholder="">
+                            </div>
+                            <button id="addAdminBtn" class="btn-primary btn-height"><i class="fas fa-user-shield"></i> Agregar Administrador</button>
+                        </div>
+                        <div id="adminList" class="card-list mt-15"></div>
+                    </div>
+<div id="cardPatients" class="card mt-20">
+                        <h3>Gestión de pacientes (privada)</h3>
+                        <p class="info-text">Solo el personal autorizado puede editar o eliminar pacientes desde la pestaña Administración.</p>
+                        <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                            <div style="flex:1">
+                                <label for="patientSearch">Buscar paciente:</label>
+                                <input type="text" id="patientSearch" placeholder="Nombre, CURP, correo o ID...">
+                            </div>
+                            <button id="refreshPatientsBtn" class="btn-primary btn-height" title="Recargar datos desde servidor"><i class="fas fa-sync-alt"></i> Refrescar</button>
+                        </div>
+                        <div id="adminPatientList" class="card-list mt-15"></div>
+
+                        <!-- Modal Editar Paciente - Paso 1: Datos básicos -->
+                        <div id="patientEditModal" class="modal">
+                            <div class="modal-content">
+                                <span class="modal-close">&times;</span>
+                                <h2><i class="fas fa-user-md"></i> Editar Paciente</h2>
+                                
+                                <!-- Paso 1: Datos básicos -->
+                                <div id="step-1" class="step-panel active">
+                                    <h3>Datos básicos del paciente</h3>
+                                    <form id="patientEditForm">
+                                        <input type="hidden" id="editPatientId">
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group half-width">
+                                                <label for="editPatName">Nombre Completo:</label>
+                                                <input type="text" id="editPatName" required>
+                                            </div>
+                                            <div class="form-group half-width">
+                                                <label for="editPatGender">Sexo:</label>
+                                                <select id="editPatGender" required title="Sexo">
+                                                    <option value="">Seleccione</option>
+                                                    <option value="Masculino">Masculino</option>
+                                                    <option value="Femenino">Femenino</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group half-width">
+                                                <label for="editPatDob">Fecha de Nacimiento:</label>
+                                                <input type="date" id="editPatDob" required>
+                                            </div>
+                                            <div class="form-group half-width">
+                                                <label for="editPatBloodType">Tipo de Sangre:</label>
+                                                <select id="editPatBloodType" title="Tipo de Sangre">
+                                                    <option value="">Seleccione</option>
+                                                    <option>O+</option>
+                                                    <option>O-</option>
+                                                    <option>A+</option>
+                                                    <option>A-</option>
+                                                    <option>B+</option>
+                                                    <option>B-</option>
+                                                    <option>AB+</option>
+                                                    <option>AB-</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="editPatCurp">CURP:</label>
+                                            <input type="text" id="editPatCurp" maxlength="18" placeholder="PEPJ900101HNTRRN01" required autocomplete="off">
+                                            <div id="curpFeedback" class="curp-feedback"></div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="editPatPhone">Teléfono:</label>
+                                            <input type="tel" id="editPatPhone" placeholder="311 123 4567" required>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="editPatEmail">Correo Electrónico:</label>
+                                            <input type="email" id="editPatEmail" placeholder="paciente@email.com">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="editPatAddress">Domicilio:</label>
+                                            <input type="text" id="editPatAddress" placeholder="Calle, número, colonia" required>
+                                        </div>
+                                        
+                                        <div class="step-actions">
+                                            <button type="button" class="btn-secondary" id="stepPrev1">Anterior</button>
+                                            <button type="button" class="btn-primary" id="stepNext1">Siguiente</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Paso 2: Dirección y contacto -->
+                                <div id="step-2" class="step-panel">
+                                    <h3>Dirección y contacto</h3>
+                                    
+                                    <div class="form-group">
+                                        <label for="editPatState">Estado:</label>
+                                        <select id="editPatState" required title="Estado">
+                                            <option value="">Seleccione un estado</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="editPatCity">Municipio / Ciudad:</label>
+                                        <select id="editPatCity" required title="Municipio o Ciudad">
+                                            <option value="">Primero seleccione un estado</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="editPatPopulation">Población / Localidad:</label>
+                                        <select id="editPatPopulation" required title="Población o Localidad">
+                                            <option value="">Primero seleccione un municipio</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="editPatZipCode">Código Postal:</label>
+                                        <input type="text" id="editPatZipCode" maxlength="5" placeholder="63630">
+                                    </div>
+                                    
+                                    <div class="step-actions">
+                                        <button type="button" class="btn-secondary" id="stepPrev2">Anterior</button>
+                                        <button type="button" class="btn-primary" id="stepNext2">Siguiente</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Paso 3: Confirmación -->
+                                <div id="step-3" class="step-panel">
+                                    <h3>Confirmar cambios</h3>
+                                    <p>Los siguientes datos serán actualizados para el paciente:</p>
+                                    <div id="preview-data" class="preview-data"></div>
+                                    
+                                    <div class="step-actions">
+                                        <button type="button" class="btn-secondary" id="stepPrev3">Anterior</button>
+                                        <button type="button" class="btn-primary" id="stepFinish">Guardar cambios</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Fin Modal Editar Paciente -->
+                    </div>
+                        <div id="adminPatientList" class="card-list mt-15"></div>
+                    </div>
+                    <div id="cardDoctorAgenda" class="card mt-20">
+                        <h3>Lista de citas ordenada por médico</h3>
+                        <div class="form-group">
+                            <label for="doctorAgendaSearch">Buscar cita:</label>
+                            <input type="text" id="doctorAgendaSearch" placeholder="Paciente, médico, ID, fecha...">
+                        </div>
+                        <div class="filter-bar">
+                            <button id="refreshDoctorListBtn" class="btn-secondary"><i class="fas fa-sync-alt"></i> Actualizar Lista</button>
+                            <button id="downloadDoctorListExcelBtn" class="btn-primary"><i class="fas fa-file-excel"></i> Exportar a Excel</button>
+                        </div>
+                        <div id="doctorAgendaList" class="card-list mt-15"></div>
+                    </div>
+                    <div class="flex-between">
+                        <button id="adminLogoutBtn" class="btn-secondary btn-height"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Historial -->
+            <div id="history" class="tab-content">
+                <h2><i class="fas fa-folder-open"></i> Historial de Citas por Paciente</h2>
+                <div class="form-group">
+                    <label for="searchPatient">Buscar paciente por nombre, CURP o correo:</label>
+                    <input type="text" id="searchPatient" placeholder="Nombre, CURP o correo...">
+                    <button id="searchHistoryBtn" class="btn-secondary">Buscar historial</button>
+                </div>
+                <div id="historyResult"></div>
+            </div>
+
+            <!-- Sección QR para validar cita -->
+            <div id="qr" class="tab-content">
+                <h2><i class="fas fa-qrcode"></i> Código QR de Cita</h2>
+                <div class="form-group">
+                    <label for="qrAppointmentId">ID de Cita (aparece en Agenda):</label>
+                    <input type="number" id="qrAppointmentId" placeholder="Ej: 1">
+                    <button id="generateQRBtn" class="btn-primary"><i class="fas fa-qrcode"></i> Generar QR</button>
+                </div>
+                <div class="form-group">
+                    <label for="qrAppointmentSelect">O elegir una cita:</label>
+                    <select id="qrAppointmentSelect">
+                        <option value="">-- Seleccione una cita --</option>
+                    </select>
+                </div>
+                <div id="qrcode" class="qr-container"></div>
+                <div id="qrMsg" class="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
