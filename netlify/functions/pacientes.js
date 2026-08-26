@@ -1,0 +1,43 @@
+const { supabase } = require('./_supabase');
+
+exports.handler = async (event, context) => {
+  const method = event.httpMethod;
+  const id = event.path.split('/').pop();
+  
+  try {
+    if (method === 'GET') {
+      if (id && id !== 'pacientes') {
+        const { data, error } = await supabase.from('pacientes').select('*').eq('id', id).single();
+        if (error) throw error;
+        return { statusCode: 200, body: JSON.stringify(data) };
+      }
+      const { data, error } = await supabase.from('pacientes').select('*').order('id');
+      if (error) throw error;
+      return { statusCode: 200, body: JSON.stringify(data) };
+    }
+    
+    if (method === 'POST') {
+      const body = JSON.parse(event.body);
+      const { data, error } = await supabase.from('pacientes').insert(body).select().single();
+      if (error) throw error;
+      return { statusCode: 201, body: JSON.stringify(data) };
+    }
+    
+    if (method === 'PUT') {
+      const body = JSON.parse(event.body);
+      const { data, error } = await supabase.from('pacientes').update(body).eq('id', id).select().single();
+      if (error) throw error;
+      return { statusCode: 200, body: JSON.stringify(data) };
+    }
+    
+    if (method === 'DELETE') {
+      const { error } = await supabase.from('pacientes').delete().eq('id', id);
+      if (error) throw error;
+      return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+    }
+    
+    return { statusCode: 405, body: 'Method Not Allowed' };
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
+  }
+};
