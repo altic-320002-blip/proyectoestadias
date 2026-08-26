@@ -5,3 +5,6 @@
 [dev]
   command = "npx serve ."
   port = 8888
+
+[functions]
+  directory = "netlify/functions"
