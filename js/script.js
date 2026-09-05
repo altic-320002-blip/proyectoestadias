@@ -595,7 +595,7 @@ function mapCitaToApi(c) {
     };
 }
 function mapAdminFromApi(a) {
-    return { email: a.email, password: '', selectedAppointmentId: null };
+    return { email: a.email, password: '', selectedAppointmentId: null, medico_id: a.medico_id || null, medico_nombre: a.medico_nombre || null };
 }
 
 // ========== SINCRONIZACION INICIAL DESDE LA API ==========
@@ -853,7 +853,9 @@ function renderAdminList() {
     const query = (searchInput?.value || '').trim().toLowerCase();
     const filteredAdmins = admins.filter(admin => {
         if (!query) return true;
-        return (admin.email || '').toLowerCase().includes(query);
+        const emailMatch = (admin.email || '').toLowerCase().includes(query);
+        const medicoMatch = (admin.medico_nombre || '').toLowerCase().includes(query);
+        return emailMatch || medicoMatch;
     });
 
     list.innerHTML = '';
@@ -868,6 +870,7 @@ function renderAdminList() {
         card.innerHTML = `
             <div class="card-info">
                 <p><strong>Correo:</strong> ${admin.email}</p>
+                <p><strong>Médico:</strong> ${admin.medico_nombre || '—'}</p>
             </div>
             <div class="card-actions">
                 ${admins.length > 1 ? `<button class="delete-admin-btn btn-danger" data-index="${index}"><i class="fas fa-trash"></i> Eliminar</button>` : ''}
@@ -976,24 +979,42 @@ async function loginDoctor() {
     showMessage(msg, `Bienvenido médico, ${doctor.name}.`);
 }
 
-async function addAdmin(email, password) {
+async function addAdminFromDoctor(medicoId, password) {
     if (!requireAdminAuth()) return;
-    const adminEmail = email.trim().toLowerCase();
-    const adminPassword = password;
-    if (!adminEmail || !adminPassword) {
-        showMessage(document.getElementById('doctorLoginMsg'), 'Ingrese correo y contraseña para el nuevo administrador.', true);
+    if (!medicoId || !password) {
+        showMessage(document.getElementById('doctorLoginMsg'), 'Seleccione un médico y escriba una contraseña.', true);
         return;
     }
-    if (admins.some(a => a.email.toLowerCase() === adminEmail)) {
-        showMessage(document.getElementById('doctorLoginMsg'), 'Ya existe un administrador con ese correo.', true);
+    const doctor = doctors.find(d => String(d.id) === String(medicoId));
+    if (!doctor) {
+        showMessage(document.getElementById('doctorLoginMsg'), 'Médico no encontrado.', true);
         return;
     }
-    try { await apiCreateAdmin({ email: adminEmail, password: adminPassword }); }
-    catch (e) { console.warn('API create admin fallo, guardando solo local:', e.message); }
-    admins.push({ email: adminEmail, password: adminPassword, selectedAppointmentId: null });
+    if (!doctor.email) {
+        showMessage(document.getElementById('doctorLoginMsg'), 'Este médico no tiene un correo registrado. Agregue el correo desde Gestión de médicos.', true);
+        return;
+    }
+    if (admins.some(a => a.medico_id && String(a.medico_id) === String(medicoId))) {
+        showMessage(document.getElementById('doctorLoginMsg'), 'Este médico ya tiene una cuenta de acceso.', true);
+        return;
+    }
+    try {
+        const created = await apiCreateAdmin({ medico_id: Number(medicoId), password });
+        // Actualizar lista admins local
+        const adminsApi = await apiGetAdmins().catch(() => []);
+        admins = adminsApi.map(mapAdminFromApi);
+    } catch (e) {
+        console.warn('API create admin fallo, guardando solo local:', e.message);
+        // Fallback local
+        admins.push({ email: doctor.email, password: password, medico_id: Number(medicoId), selectedAppointmentId: null });
+    }
     saveData();
     renderAdminList();
-    showMessage(document.getElementById('doctorLoginMsg'), `Administrador ${adminEmail} agregado.`);
+    // Limpiar formulario
+    document.getElementById('newAdminDoctor').value = '';
+    document.getElementById('newAdminEmailReadonly').value = '';
+    document.getElementById('newAdminPassword').value = '';
+    showMessage(document.getElementById('doctorLoginMsg'), `Administrador para ${doctor.name} agregado.`);
 }
 
 async function deleteAdmin(index) {
@@ -1073,6 +1094,28 @@ function updateDoctorSelect(filterDias) {
         option.textContent = `${doctor.name} (${doctor.area})`;
         doctorSelect.appendChild(option);
     }
+}
+
+function populateAdminDoctorSelect() {
+    const sel = document.getElementById('newAdminDoctor');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Seleccione un médico</option>';
+    const usedIds = new Set(admins.map(a => a.medico_id).filter(Boolean));
+    doctors.forEach(d => {
+        // Mostrar médicos sin cuenta y con correo
+        const option = document.createElement('option');
+        option.value = d.id;
+        option.textContent = `${d.name} (${d.area})`;
+        // Permitir seleccionar aunque ya tenga cuenta; se validará al crear
+        sel.appendChild(option);
+    });
+    // Sincronizar correo cuando cambie
+    document.getElementById('newAdminDoctor')?.addEventListener('change', (e) => {
+        const id = e.target.value;
+        const doc = doctors.find(d => String(d.id) === String(id));
+        const emailField = document.getElementById('newAdminEmailReadonly');
+        if (emailField) emailField.value = doc ? (doc.email || '') : '';
+    });
 }
 
 function renderPatientList() {
@@ -2456,6 +2499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updatePatientSelect();
     updateDoctorSelect();
+    populateAdminDoctorSelect();
     renderPatientList();
     renderDoctorList();
     renderDoctorAgenda();
@@ -2491,15 +2535,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('addAdminBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        const email = document.getElementById('newAdminEmail').value.trim();
+        const medicoId = document.getElementById('newAdminDoctor').value;
         const password = document.getElementById('newAdminPassword').value;
-        if (!email || !password) {
-            showMessage(document.getElementById('doctorLoginMsg'), 'Ingrese correo y contraseña para el nuevo administrador.', true);
-            return;
-        }
-        addAdmin(email, password);
-        document.getElementById('newAdminEmail').value = '';
-        document.getElementById('newAdminPassword').value = '';
+        addAdminFromDoctor(medicoId, password);
     });
     document.getElementById('filterBtn')?.addEventListener('click', () => {
         renderAgenda(document.getElementById('filterDate').value);

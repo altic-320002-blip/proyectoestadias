@@ -101,10 +101,22 @@ app.delete("/api/pacientes/:id", async (req, res) => {
 // ===================== MEDICOS =====================
 app.get("/api/medicos", async (req, res) => {
   try {
-    // No devolver password_hash
     const [rows] = await pool.query("SELECT id, nombre, area, telefono, email FROM medicos ORDER BY nombre");
     res.json(rows);
   } catch (e) { handleError(res, e, "No se pudieron obtener medicos"); }
+});
+
+app.get("/api/medicos/disponibles-para-acceso", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT m.id, m.nombre, m.email
+      FROM medicos m
+      LEFT JOIN admins a ON a.medico_id = m.id
+      WHERE m.email IS NOT NULL AND a.id IS NULL
+      ORDER BY m.nombre
+    `);
+    res.json(rows);
+  } catch (e) { handleError(res, e, "No se pudieron obtener medicos disponibles"); }
 });
 
 app.post("/api/medicos", async (req, res) => {
@@ -199,7 +211,12 @@ app.delete("/api/citas/:id", async (req, res) => {
 // ===================== ADMINS =====================
 app.get("/api/admins", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT id, email, role, is_active, created_at, last_login FROM admins ORDER BY id");
+    const [rows] = await pool.query(`
+      SELECT a.id, a.email, a.role, a.is_active, a.created_at, a.last_login, a.medico_id, m.nombre AS medico_nombre
+      FROM admins a
+      LEFT JOIN medicos m ON a.medico_id = m.id
+      ORDER BY a.id
+    `);
     res.json(rows);
   } catch (e) { handleError(res, e, "No se pudieron obtener los admins"); }
 });
@@ -207,6 +224,25 @@ app.get("/api/admins", async (req, res) => {
 app.post("/api/admins", async (req, res) => {
   try {
     const a = req.body || {};
+    // Nuevo flujo: crear admin a partir de medico_id
+    if (a.medico_id && a.password) {
+      const [meds] = await pool.query("SELECT id, email FROM medicos WHERE id = ?", [a.medico_id]);
+      if (!meds.length) return res.status(404).json({ error: "Médico no encontrado" });
+      const medico = meds[0];
+      if (!medico.email) return res.status(400).json({ error: "El médico no tiene correo registrado" });
+      const [existsAdmin] = await pool.query("SELECT id FROM admins WHERE medico_id = ?", [a.medico_id]);
+      if (existsAdmin.length) return res.status(409).json({ error: "Este médico ya tiene una cuenta de acceso" });
+      const [existsEmail] = await pool.query("SELECT id FROM admins WHERE email = ?", [medico.email.toLowerCase()]);
+      if (existsEmail.length) return res.status(409).json({ error: "Ya existe un admin con ese correo" });
+      const [result] = await pool.query(
+        "INSERT INTO admins (email, password_hash, role, medico_id) VALUES (?,?,?,?)",
+        [medico.email.toLowerCase(), "", a.role || "admin", a.medico_id]
+      );
+      await pool.query("UPDATE admins SET password_hash = SHA2(?,512) WHERE id = ?", [a.password, result.insertId]);
+      const [rows] = await pool.query("SELECT id, email, role, medico_id FROM admins WHERE id = ?", [result.insertId]);
+      return res.status(201).json(rows[0]);
+    }
+    // Flujo legacy por email
     if (!a.email || !a.password) return res.status(400).json({ error: "Email y contrasena obligatorios" });
     const [exists] = await pool.query("SELECT id FROM admins WHERE email = ?", [a.email.toLowerCase()]);
     if (exists.length) return res.status(409).json({ error: "Ya existe un admin con ese correo" });
@@ -214,7 +250,6 @@ app.post("/api/admins", async (req, res) => {
       "INSERT INTO admins (email, password_hash, role) VALUES (?,?,?)",
       [a.email.toLowerCase(), "", a.role || "admin"]
     );
-    // mysql2 no tiene SHA2 en JS, usamos query SQL para guardar el hash:
     await pool.query("UPDATE admins SET password_hash = SHA2(?,512) WHERE id = ?", [a.password, result.insertId]);
     const [rows] = await pool.query("SELECT id, email, role FROM admins WHERE id = ?", [result.insertId]);
     res.status(201).json(rows[0]);
