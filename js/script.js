@@ -1012,7 +1012,6 @@ async function addAdminFromDoctor(medicoId, password) {
     renderAdminList();
     // Limpiar formulario
     document.getElementById('newAdminDoctor').value = '';
-    document.getElementById('newAdminEmailReadonly').value = '';
     document.getElementById('newAdminPassword').value = '';
     showMessage(document.getElementById('doctorLoginMsg'), `Administrador para ${doctor.name} agregado.`);
 }
@@ -1102,19 +1101,13 @@ function populateAdminDoctorSelect() {
     sel.innerHTML = '<option value="">Seleccione un médico</option>';
     const usedIds = new Set(admins.map(a => a.medico_id).filter(Boolean));
     doctors.forEach(d => {
-        // Mostrar médicos sin cuenta y con correo
+        // Mostrar médicos con correo
+        if (!d.email) return;
         const option = document.createElement('option');
         option.value = d.id;
         option.textContent = `${d.name} (${d.area})`;
         // Permitir seleccionar aunque ya tenga cuenta; se validará al crear
         sel.appendChild(option);
-    });
-    // Sincronizar correo cuando cambie
-    document.getElementById('newAdminDoctor')?.addEventListener('change', (e) => {
-        const id = e.target.value;
-        const doc = doctors.find(d => String(d.id) === String(id));
-        const emailField = document.getElementById('newAdminEmailReadonly');
-        if (emailField) emailField.value = doc ? (doc.email || '') : '';
     });
 }
 
