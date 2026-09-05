@@ -1498,16 +1498,16 @@ document.getElementById('patientEditForm').addEventListener('submit', async (e) 
     const formData = {
         nombre,
         curp,
-        fecha_nacimiento: document.getElementById('editPatDob').value,
+        fecha_nacimiento: document.getElementById('editPatDob').value || null,
         genero: document.getElementById('editPatGender').value || '',
         telefono: document.getElementById('editPatPhone').value.trim(),
         email: document.getElementById('editPatEmail').value.trim(),
         direccion: document.getElementById('editPatAddress').value.trim(),
-        estado: document.getElementById('editPatState').value || '',
-        municipio: document.getElementById('editPatCity').value || '',
-        localidad: document.getElementById('editPatPopulation').value || '',
+        estado: document.getElementById('editPatState').value || null,
+        municipio: document.getElementById('editPatCity').value || null,
+        localidad: document.getElementById('editPatPopulation').value || null,
         codigo_postal: document.getElementById('editPatZipCode').value.trim(),
-        blood_type: document.getElementById('editPatBloodType').value || ''
+        blood_type: document.getElementById('editPatBloodType').value || null
     };
 
     try {
@@ -1528,7 +1528,12 @@ document.getElementById('patientEditForm').addEventListener('submit', async (e) 
 });
  // Manejar clic en botón Guardar cambios (el botón está fuera del formulario)
 document.getElementById('stepFinish').addEventListener('click', () => {
-    document.getElementById('patientEditForm').dispatchEvent(new Event('submit'));
+    const form = document.getElementById('patientEditForm');
+    if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+    } else {
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }
 });
 
 // Mostrar resumen en el paso 3
