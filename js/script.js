@@ -1485,9 +1485,19 @@ document.getElementById('patientEditForm').addEventListener('submit', async (e) 
     if (!requireAdminAuth()) return;
 
     const id = document.getElementById('editPatientId').value;
+    if (!id) {
+        showMessage(document.getElementById('patientMsg'), 'ID de paciente inválido.', true);
+        return;
+    }
+    const nombre = document.getElementById('editPatName').value.trim();
+    const curp = document.getElementById('editPatCurp').value.trim().toUpperCase();
+    if (!nombre || !curp) {
+        showMessage(document.getElementById('patientMsg'), 'Nombre y CURP son obligatorios.', true);
+        return;
+    }
     const formData = {
-        nombre: document.getElementById('editPatName').value.trim(),
-        curp: document.getElementById('editPatCurp').value.trim().toUpperCase(),
+        nombre,
+        curp,
         fecha_nacimiento: document.getElementById('editPatDob').value,
         genero: document.getElementById('editPatGender').value || '',
         telefono: document.getElementById('editPatPhone').value.trim(),
@@ -1502,18 +1512,18 @@ document.getElementById('patientEditForm').addEventListener('submit', async (e) 
 
     try {
         const result = await apiUpdatePaciente(id, formData);
-        // Actualizar la lista local
-        const index = patients.findIndex(p => p.id === Number(id));
-        if (index !== -1) {
-            patients[index] = { ...patients[index], ...mapPacienteFromApi(result) };
-            saveData();
-        }
+        // Refrescar lista desde API para sincronizar
+        try {
+            const fresh = await apiGetPacientes();
+            patients = fresh.map(mapPacienteFromApi);
+        } catch (_) {}
         renderAdminPatientList();
         renderPatientList();
         document.getElementById('patientEditModal').style.display = 'none';
         showMessage(document.getElementById('patientMsg'), 'Paciente actualizado correctamente.');
     } catch (err) {
         showMessage(document.getElementById('patientMsg'), 'Error al actualizar el paciente: ' + err.message, true);
+        console.error('apiUpdatePaciente error', err);
     }
 });
  // Manejar clic en botón Guardar cambios (el botón está fuera del formulario)
