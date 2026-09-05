@@ -401,8 +401,8 @@ let admins = readStoredData('hospital_admins', [DEFAULT_ADMIN]);
     }
     try { localStorage.setItem('hospital_admins', JSON.stringify(admins)); } catch (e) { /* ignore */ }
 })();
-let adminLoggedIn = false;
-let currentAdminEmail = '';
+let adminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
+let currentAdminEmail = localStorage.getItem('currentAdminEmail') || '';
 let doctorLoggedIn = false;
 let currentDoctorEmail = '';
 let nextPatientId = patients.length > 0 ? Math.max(...patients.map(p => p.id)) + 1 : 1;
@@ -900,6 +900,8 @@ function loginAdmin() {
 
     adminLoggedIn = true;
     currentAdminEmail = admin.email;
+    localStorage.setItem('adminLoggedIn', 'true');
+    localStorage.setItem('currentAdminEmail', admin.email);
     document.getElementById('doctorLoginEmail').value = '';
     document.getElementById('doctorLoginPassword').value = '';
     try { localStorage.setItem('hospital_admins', JSON.stringify(admins)); } catch (e) { /* ignore */ }
@@ -910,6 +912,8 @@ function loginAdmin() {
 function logoutAdmin() {
     adminLoggedIn = false;
     currentAdminEmail = '';
+    localStorage.removeItem('adminLoggedIn');
+    localStorage.removeItem('currentAdminEmail');
     doctorLoggedIn = false;
     currentDoctorEmail = '';
     try { localStorage.setItem('hospital_admins', JSON.stringify(admins)); } catch (e) { /* ignore */ }
@@ -1522,8 +1526,17 @@ document.getElementById('patientEditForm').addEventListener('submit', async (e) 
         document.getElementById('patientEditModal').style.display = 'none';
         showMessage(document.getElementById('patientMsg'), 'Paciente actualizado correctamente.');
     } catch (err) {
-        showMessage(document.getElementById('patientMsg'), 'Error al actualizar el paciente: ' + err.message, true);
-        console.error('apiUpdatePaciente error', err);
+        console.warn('API update paciente fallo, guardando solo local:', err.message);
+        // Fallback local
+        const index = patients.findIndex(p => p.id === Number(id));
+        if (index !== -1) {
+            patients[index] = { ...patients[index], name: nombre, curp, dob: document.getElementById('editPatDob').value, gender: document.getElementById('editPatGender').value, phone: document.getElementById('editPatPhone').value.trim(), email: document.getElementById('editPatEmail').value.trim(), address: document.getElementById('editPatAddress').value.trim(), state: document.getElementById('editPatState').value, city: document.getElementById('editPatCity').value, population: document.getElementById('editPatPopulation').value, zipCode: document.getElementById('editPatZipCode').value.trim(), bloodType: document.getElementById('editPatBloodType').value };
+            saveData();
+        }
+        renderAdminPatientList();
+        renderPatientList();
+        document.getElementById('patientEditModal').style.display = 'none';
+        showMessage(document.getElementById('patientMsg'), 'Paciente actualizado localmente. Sincronización pendiente.');
     }
 });
  // Manejar clic en botón Guardar cambios (el botón está fuera del formulario)
