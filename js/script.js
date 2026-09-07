@@ -374,11 +374,8 @@ function readStoredData(key, fallback) {
     }
 }
 
-let patients = readStoredData('hospital_patients', []).map(normalizePatientRecord).filter(p => p.curp !== 'FEPA921108MNTRN03' && p.name !== 'Ana Cristina Fernández Pérez');
-let appointments = readStoredData('hospital_appointments', []).filter(a => a.patientId !== 1);
-// Limpieza persistente del paciente demo en localStorage
-try { localStorage.setItem('hospital_patients', JSON.stringify(patients)); } catch(e){}
-try { localStorage.setItem('hospital_appointments', JSON.stringify(appointments)); } catch(e){}
+let patients = readStoredData('hospital_patients', []).map(normalizePatientRecord);
+let appointments = readStoredData('hospital_appointments', []);
 
 let doctors = readStoredData('hospital_doctors', [
     { id: 1, name: 'Dr. Carlos Jiménez', area: 'Medicina General', email: 'carlos.jimenez@hospital.com', password: 'Doctor123' },
@@ -601,6 +598,7 @@ function mapAdminFromApi(a) {
 // ========== SINCRONIZACION INICIAL DESDE LA API ==========
 async function syncFromApi() {
     if (typeof apiGetPacientes !== 'function') return; // api.js no cargado
+    let adminsApi = [];
     try {
         const [pacientes, medicos, citas] = await Promise.all([
             apiGetPacientes(),
@@ -614,15 +612,12 @@ async function syncFromApi() {
         console.warn('syncFromApi parcial falló para pacientes/médicos/citas:', e.message);
     }
     try {
-        const adminsApi = await apiGetAdmins();
+        adminsApi = await apiGetAdmins();
         if (adminsApi && adminsApi.length) {
             admins = adminsApi.map(mapAdminFromApi);
         }
     } catch (_) {}
     normalizeAppointmentDoctorLabels();
-    if (adminsApi && adminsApi.length) {
-        admins = adminsApi.map(mapAdminFromApi);
-    }
     nextPatientId = patients.length > 0 ? Math.max(...patients.map(p => p.id)) + 1 : 1;
     nextAppointmentId = appointments.length > 0 ? Math.max(...appointments.map(a => a.id)) + 1 : 1;
     nextDoctorId = doctors.length > 0 ? Math.max(...doctors.map(d => d.id || 0)) + 1 : 1;
@@ -2443,20 +2438,6 @@ function loadDemoData() {
 
 // ========== 7. EVENT LISTENERS ==========
 document.addEventListener('DOMContentLoaded', () => {
-    // Eliminar paciente demo Ana Cristina Fernández Pérez del localStorage
-    try {
-        if (localStorage.getItem('hospital_patients')) {
-            let arr = JSON.parse(localStorage.getItem('hospital_patients'));
-            arr = arr.filter(p => p.curp !== 'FEPA921108MNTRN03' && p.name !== 'Ana Cristina Fernández Pérez');
-            localStorage.setItem('hospital_patients', JSON.stringify(arr));
-        }
-        if (localStorage.getItem('hospital_appointments')) {
-            let appts = JSON.parse(localStorage.getItem('hospital_appointments'));
-            // Filtrar citas del paciente demo (patientId 1 o curp)
-            appts = appts.filter(a => a.patientId !== 1);
-            localStorage.setItem('hospital_appointments', JSON.stringify(appts));
-        }
-    } catch(e) {}
     // Cargar datos demo si no existen
     if (patients.length === 0) {
         const storedPatients = localStorage.getItem('hospital_patients');

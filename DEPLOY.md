@@ -37,6 +37,18 @@
 - Sube los archivos estáticos
 - Actualiza `js/config.js` con la URL del backend
 
+### Netlify + Supabase
+Para que las citas se guarden en la base de datos compartida y no solo en el navegador:
+
+1. Ejecuta `supabase_migration.sql` en el SQL Editor de Supabase.
+2. En Netlify abre **Site configuration > Environment variables** y agrega:
+   - `SUPABASE_URL`: URL de tu proyecto Supabase.
+   - `SUPABASE_SERVICE_ROLE_KEY`: clave **service_role** de Supabase. Solo debe existir como variable privada de Netlify.
+3. En Netlify vuelve a desplegar el sitio después de guardar las variables.
+4. Comprueba `https://tu-sitio.netlify.app/.netlify/functions/health` y luego registra una cita.
+
+La clave `service_role` nunca debe escribirse en `js/config.js`, HTML, JavaScript del navegador ni subirse al repositorio.
+
 ## Seguridad
 - Cambia contraseñas por defecto en `hospital_citas.sql`
 - Restringe `FRONTEND_ORIGIN` en producción

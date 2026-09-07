@@ -3,7 +3,12 @@ const { supabase } = require('./_supabase');
 exports.handler = async (event) => {
   const method = event.httpMethod;
   const id = event.path.split('/').pop();
-  const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS' };
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Content-Type': 'application/json'
+  };
   if (method === 'OPTIONS') return { statusCode: 200, headers };
   try {
     if (method === 'GET') {
@@ -26,7 +31,10 @@ exports.handler = async (event) => {
     }
     
     if (method === 'POST') {
-      const body = JSON.parse(event.body);
+      const body = JSON.parse(event.body || '{}');
+      if (!body.paciente_id || !body.fecha || !body.hora) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan paciente_id, fecha u hora' }) };
+      }
       const { data, error } = await supabase.from('citas').insert(body).select().single();
       if (error) throw error;
       return { statusCode: 201, headers, body: JSON.stringify(data) };
