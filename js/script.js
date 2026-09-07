@@ -2486,8 +2486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     doSync();
-    // Sincronización automática cada 5 segundos para casi tiempo real en todos los dispositivos
-    setInterval(doSync, 5000);
+    // Sincronización automática cada 2 segundos para casi tiempo real en todos los dispositivos
+    setInterval(doSync, 2000);
     
     // Cargar estados geográficos
     loadStates();
@@ -2867,6 +2867,8 @@ if (!patientId || !doctor || !date || !time) {
     saveData();
     renderAgenda();
     renderDoctorAgenda();
+    // Sincronizar inmediatamente para reflejar en otros dispositivos
+    syncFromApi().catch(()=>{});
     
     const patient = patients.find(p => p.id === patientId);
     if(patient && patient.email){
